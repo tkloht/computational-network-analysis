@@ -1,0 +1,40 @@
+\documentclass{article}
+
+\begin{document}
+
+<<r setup, include=FALSE>>=
+opts_chunk$set(dev = 'pdf')
+library("igraph", lib.loc="/Library/Frameworks/R.framework/Versions/3.0/Resources/library")
+g <- read.graph(file="SmallW.net", format="pajek")
+@
+
+\title{Computational Network Analysis - Exercise 5}
+\author{Tobias Kloht, ID: 4596192}
+\maketitle
+\section{}
+\emph{Write a function that determines the highest modularity in a network based on calculating the edge betweenness. Use the co-authorship network provided in homework assignment 3.}
+
+\subsection{Calculation of the edge betweenness}
+<<>>=
+edgeBetweennessCommunity = edge.betweenness.community(g)
+@
+
+\subsection{Determination of the maximal modularity}
+<<>>=
+modularity(edgeBetweennessCommunity)
+@
+
+\subsection{Visualization}
+\emph{Additional: Visualize the result in R (as network or as diagram). .}
+<<tidy=FALSE>>=
+plot(edgeBetweennessCommunity, 
+     g,
+     vertex.size=10,
+     vertex.label=NA,
+     edge.arrow.width=0.2,
+     edge.width = 0.2)
+@
+
+
+
+\end{document}

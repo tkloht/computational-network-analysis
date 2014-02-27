@@ -1,0 +1,104 @@
+\documentclass{article}
+
+\begin{document}
+
+<<r setup, include=FALSE>>=
+opts_chunk$set(dev = 'pdf')
+library("igraph", lib.loc="/Library/Frameworks/R.framework/Versions/3.0/Resources/library")
+  data <- read.csv("~/Code/computational network analysis/daedalus-data.csv", header=TRUE, sep=";")
+@
+
+\title{Computational Network Analysis - Exercise 4}
+\author{Tobias Kloht, ID: 4596192}
+\maketitle
+\section{}
+\emph{Please load the dataframe provided in the first homework and filter the first three columns (gender, age, game). Check the dimension of your dataset.}
+<<asdasd>>=
+data_min = data[c(1:3)] # restrict on columns 1 to 3
+dim(data_min)           # show number of rows and columns
+@
+
+
+\emph{Now select only those rows that contain a valid value (i.e., no NAN values or empty cells should be contained in your dataframe). Check again the dimension of your dataframe. }
+<<>>=
+data_min[data_min==""] = NA  # replace empty fields (=="") with NA
+data_min = na.omit(data_min)  # omit all rows with NA values 
+dim(data_min)                 # show number of rows and columns
+@
+\emph{Now, aggregate all players that have the same age, gender, and played the same game. For example, your dataframe contains some players who are 18 years old and male and played WoW. Aggregate those to one person but keep their number in an additional column. }
+
+
+<<tidy=FALSE>>=
+# add column number to count occurrences. init with 1 
+data_min["number"] = 1 
+# aggregate rows with equal values
+# sum aggregated rows in number column
+aggregateData = aggregate(number ~ Gender + Age + Game, 
+                          FUN = sum, 
+                          data=data_min)
+
+@
+\emph{
+Your (new) dataframe should follow the following structure:}
+\begin{description}
+\item[personId] \emph{(corresponds to the aggregated people) for example m18WoW or f20WoW }
+\item[game] \emph{(corresponds to the game) for example WoW}
+\item[number] \emph{(corresponds to the number of players to whom the attributes apply)}
+\end{description}
+
+<<tidy=FALSE>>=
+# replace "female" and "male with "f" and "m" respectively
+levels(aggregateData$Gender)
+levels(aggregateData$Gender)[3] = "m"
+levels(aggregateData$Gender)[2] = "f"
+
+# concatenate Gender, Age and Game columns
+aggregateData$personId = do.call(paste,
+    c(aggregateData[c("Gender", "Age", "Game")], 
+    sep = "")) 
+
+# drop unnecessary columns and reorder
+aggregateData = aggregateData[,c(5,3,4)]
+
+str(aggregateData)
+@
+
+\emph{Now, use this dataframe to create a bipartite network.}
+<<>>=
+# create graph from edgelist
+gameGraph = graph.edgelist(as.matrix(aggregateData[,c(1,2)]))
+# set type attribute on vertex
+V(gameGraph)$type = V(gameGraph)$name %in% get.edgelist(gameGraph)[,1]
+@
+
+\emph{Additional question: Do you have an idea how to keep the number of gamers in each aggregate in your network model?}
+<<>>=
+# add number of gamers as edge weight
+E(gameGraph)$weight=as.numeric(aggregateData[,3])
+@
+
+\emph{Please check the number of vertices and edges in your network.}
+<<>>=
+# number of vertices
+vcount(gameGraph)
+# number of edges
+ecount(gameGraph)
+@
+
+\emph{Now create an unipartite network. Please make your projection weighted, by giving each edge between two vertices in the projected network a weight equal to the number of common games the vertices share. Please reveal again the number of vertices and edges in your network. }
+
+<<tidy=FALSE>>=
+# create bipartite projection
+gameGraphProjection = bipartite.projection (
+                      gameGraph,multiplicity = TRUE)$proj2
+
+#number of vertices
+vcount(gameGraphProjection)
+
+#number of edges
+ecount(gameGraphProjection)
+
+@
+
+
+\end{document}

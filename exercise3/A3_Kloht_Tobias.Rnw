@@ -1,0 +1,79 @@
+\documentclass{article}
+
+\begin{document}
+
+<<r setup, include=FALSE>>==
+opts_chunk$set(dev = 'pdf')
+library("igraph", lib.loc="/Library/Frameworks/R.framework/Versions/3.0/Resources/library")
+g <- read.graph(file="SmallW.net", format="pajek")
+
+@
+
+\title{Computational Network Analysis - Exercise 3}
+\author{Tobias Kloht, ID: 4596192}
+\maketitle
+\section{}
+\emph{Apply the during class learned basic measures on the provided data set. 
+(Please consider the following measures: number of vertices, number of 
+edges, average path length, mean degree).}
+<<number of vertices>>=
+vcount(g)
+@
+
+<<number of edges>>==
+ecount(g)
+@
+
+<<average path length>>==
+average.path.length(g)
+@
+
+<<mean degree>>==
+mean(degree(g))
+@
+
+\begin{table}[h]
+\begin{tabular}{|l|l|l|l|}
+\hline
+Number of vertices & Number of edges & Average path length & mean degree \\ \hline
+   \Sexpr{vcount(g)} &\Sexpr{ecount(g)}&\Sexpr{average.path.length(g)}  &  \Sexpr{mean(degree(g))} \\ \hline
+\end{tabular}
+\end{table}
+
+\section{}
+\emph{Write three functions that allow you to calculate the degree, betwenness, and closeness centralization measures for the whole network. Apply your functions on the network and interprete your results.}
+\subsection{Degree Centralization}
+<<tidy=FALSE>>=
+degree_centralization = function(x){
+  sum(max(
+    degree(x, normalized=TRUE)) - degree(x, normalized=TRUE)
+  ) / ((length(x) -1)^2 * (length(x) -2))
+}
+degree_centralization(g)
+@
+
+\subsection{Betweenness Centralization}
+<<tidy=FALSE>>=
+betweennes_centralization = function(x){
+  sum(max(
+    betweenness(x, normalized=TRUE)) - betweenness(x, normalized=TRUE)
+  ) / ((length(x) -1)^2 * (length(x) -2))
+}
+betweennes_centralization(g)
+@
+
+\subsection{Closeness Centralization}
+<<tidy=FALSE>>=
+closeness_centralization = function(x){
+  sum(max(
+    closeness(x, normalized=TRUE)) - closeness(x, normalized=TRUE)
+  ) / ((length(x) -1)^2 * (length(x) -2))
+}
+closeness_centralization(g)
+@
+
+\subsection{Interpretation}
+Degree centralization is relatively high in this network because the highest degree in the network is much higher than other nodes in this network. In comparison the betweenness and closeness centralization is lower because it is more evenly distributed over the network.
+
+This shows that there is a small set of vertexes which is very very well connected to other nodes, but these nodes are not used to interconnect other nodes. A likely reason for this is that the network is a directed graph, and the nodes whith high degree centrality mostly have outbound edges.
+\end{document}

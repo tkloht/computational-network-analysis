@@ -1,0 +1,113 @@
+\documentclass{article}
+
+\begin{document}
+
+<<r setup, include=FALSE>>==
+opts_chunk$set(dev = 'pdf')
+  data <- read.csv("~/Code/computational network analysis/daedalus-data.csv", header=TRUE, sep=";")
+
+@
+
+\title{Computational Network Analysis - Exercise 2}
+\author{Tobias Kloht, ID: 4596192}
+\maketitle
+\section{}
+\emph{Create a frequency table to show the relative and absolute frequencies of the 
+popular games. Then create an appropriate diagram that helps you to identify 
+the most popular games visually.}
+<<Frequency Table>>=
+#create dataframe from game column
+freqTable = as.data.frame(table(data$Game))
+ #add column for relative frequency
+freqTable = transform(freqTable, relative = prop.table(Freq))   
+freqTable
+@
+
+<<tidy=FALSE>>=
+barplot(freqTable$Freq, 
+    names.arg=freqTable$Var1,
+    cex.names = 0.65, 
+    ylim=c(0,2000),
+    col=rainbow(length(freqTable$Var1)),
+    main="Popularity of MMORPGs")
+pie(freqTable$relative, 
+    labels = freqTable$Var1, 
+    col=rainbow(length(freqTable$Var1)), 
+    main="Relative popularity of MMORPGs")
+@
+
+\section{}
+\subsection
+\emph{What are the top three most popular games?}
+
+<<tidy=FALSE>>=
+
+head(sort(table(subset(data$Game, data$Game!="Other")), 
+          decreasing=TRUE), n=3)
+@
+
+
+\subsection{}
+\emph{What is the proportion of players who played the top three games (do not consider the group Other)? Differentiate separately each proportion of each game by average time spend and gender.}
+
+The column "hours" gives the average hours per week spent playing the game.
+Tapply is used to show time spent divided by gender.
+
+<<>>=
+wowSet = subset(data, data$Game=="WoW")
+eqSet = subset(data, data$Game=="EQ")
+eq2Set = subset(data, data$Game=="EQ2")
+
+tapply(wowSet$Hours, wowSet$Gender, mean, na.rm=TRUE)
+tapply(eqSet$Hours, eqSet$Gender, mean, na.rm=TRUE)
+tapply(eq2Set$Hours, eq2Set$Gender, mean, na.rm=TRUE)
+@
+
+
+
+\subsection
+\emph{On average, which game is played by the youngest gamers and the oldest gamers?}
+<<>>=
+sort(tapply(data$Age, data$Game, mean, na.rm=TRUE), decreasing=TRUE)
+@
+This shows that the game played by the oldest players is Asheron's Call while Final Fantasy XI has the youngest players on average.
+
+
+\section{}
+\emph{Based on your results, discuss your insights to 
+the most popular games.}
+
+
+As one might expect, MMORPGs are dominated by World of Warcraft. Other games share a relatively similar popularity, only Everquest 1 and 2 are slightly more wide spread. World of Warcraft has six times more players than the second most popular game Everquest 2.
+
+The evaluation of hours spent gaming per week shows that female gamers on average spend more time gaming than male gamers, which contradicts the preconception that play less video games. However the maximum time spent per week is still much higher for male gamers.
+
+The age statistics show that the mean age varies a lot depending on the examined game. The reasons for this remain unclear with the given data - the assumption that it is connected to the release date of the game could not be confirmed. Another assumption could be that the mean age is connected to the supported platforms or specific gameplay mechanics, but this can not be evaluated with the given data.
+
+
+\section{}
+\emph{Based on the provided data, define three networks
+based on the dataframe and explain briefly, why 
+it might be interesting to analyze existing relations.}
+\begin{itemize}
+\item
+\begin{description}
+\item[Vertex]Player
+\item[Edge]Teammates
+\end{description}
+In MMORPGs gamers usually solve quests in small groups and organize themselves in guilds. It would be interesting to see how these relationships compare to the real life and social networks.
+
+\item
+\begin{description}
+\item[Vertex] Item
+\item[Edge] Owned By
+\end{description}
+When items are traded it would be possible to see how they are distributed. For example it could be possible to identify hubs (traders), or if the items were traded directly. It would also be possible to examine if some items are not used by players regularly but usually sold and then kept by traders. 
+\item
+\begin{description}
+\item[Vertex] Player
+\item[Edge] Kill
+\end{description}
+This relation could provide insight in the way players interact with each other. For example it could be examined if players take revenge after being killed in the game. Another easy evaluation could show if certain players kill or get killed more often than other players. Apart from that it would be interesting to see if kills are evenly distributed or for example restricted to certain fractions in the game.
+\end{itemize}
+\end{document}

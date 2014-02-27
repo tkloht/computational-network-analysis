@@ -1,0 +1,221 @@
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+
+\begin{document}
+
+
+
+
+\title{Computational Network Analysis - Exercise 4}
+\author{Tobias Kloht, ID: 4596192}
+\maketitle
+\section{}
+\emph{Please load the dataframe provided in the first homework and filter the first three columns (gender, age, game). Check the dimension of your dataset.}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{data_min} \hlkwb{=} \hlstd{data[}\hlkwd{c}\hlstd{(}\hlnum{1}\hlopt{:}\hlnum{3}\hlstd{)]}  \hlcom{# restrict on columns 1 to 3}
+\hlkwd{dim}\hlstd{(data_min)}  \hlcom{# show number of rows and columns}
+\end{alltt}
+\begin{verbatim}
+## [1] 3246    3
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+
+\emph{Now select only those rows that contain a valid value (i.e., no NAN values or empty cells should be contained in your dataframe). Check again the dimension of your dataframe. }
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{data_min[data_min} \hlopt{==} \hlstr{""}\hlstd{]} \hlkwb{=} \hlnum{NA}  \hlcom{# replace empty fields (=='') with NA}
+\hlstd{data_min} \hlkwb{=} \hlkwd{na.omit}\hlstd{(data_min)}  \hlcom{# omit all rows with NA values }
+\hlkwd{dim}\hlstd{(data_min)}  \hlcom{# show number of rows and columns}
+\end{alltt}
+\begin{verbatim}
+## [1] 3115    3
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+\emph{Now, aggregate all players that have the same age, gender, and played the same game. For example, your dataframe contains some players who are 18 years old and male and played WoW. Aggregate those to one person but keep their number in an additional column. }
+
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# add column number to count occurrences. init with 1 }
+\hlstd{data_min[}\hlstr{"number"}\hlstd{]} \hlkwb{=} \hlnum{1}
+\hlcom{# aggregate rows with equal values}
+\hlcom{# sum aggregated rows in number column}
+\hlstd{aggregateData} \hlkwb{=} \hlkwd{aggregate}\hlstd{(number} \hlopt{~} \hlstd{Gender} \hlopt{+} \hlstd{Age} \hlopt{+} \hlstd{Game,}
+                          \hlkwc{FUN} \hlstd{= sum,}
+                          \hlkwc{data}\hlstd{=data_min)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\emph{
+Your (new) dataframe should follow the following structure:}
+\begin{description}
+\item[personId] \emph{(corresponds to the aggregated people) for example m18WoW or f20WoW }
+\item[game] \emph{(corresponds to the game) for example WoW}
+\item[number] \emph{(corresponds to the number of players to whom the attributes apply)}
+\end{description}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# replace "female" and "male with "f" and "m" respectively}
+\hlkwd{levels}\hlstd{(aggregateData}\hlopt{$}\hlstd{Gender)}
+\end{alltt}
+\begin{verbatim}
+## [1] ""       "female" "male"
+\end{verbatim}
+\begin{alltt}
+\hlkwd{levels}\hlstd{(aggregateData}\hlopt{$}\hlstd{Gender)[}\hlnum{3}\hlstd{]} \hlkwb{=} \hlstr{"m"}
+\hlkwd{levels}\hlstd{(aggregateData}\hlopt{$}\hlstd{Gender)[}\hlnum{2}\hlstd{]} \hlkwb{=} \hlstr{"f"}
+
+\hlcom{# concatenate Gender, Age and Game columns}
+\hlstd{aggregateData}\hlopt{$}\hlstd{personId} \hlkwb{=} \hlkwd{do.call}\hlstd{(paste,}
+    \hlkwd{c}\hlstd{(aggregateData[}\hlkwd{c}\hlstd{(}\hlstr{"Gender"}\hlstd{,} \hlstr{"Age"}\hlstd{,} \hlstr{"Game"}\hlstd{)],}
+    \hlkwc{sep} \hlstd{=} \hlstr{""}\hlstd{))}
+
+\hlcom{# drop unnecessary columns and reorder}
+\hlstd{aggregateData} \hlkwb{=} \hlstd{aggregateData[,}\hlkwd{c}\hlstd{(}\hlnum{5}\hlstd{,}\hlnum{3}\hlstd{,}\hlnum{4}\hlstd{)]}
+
+\hlkwd{str}\hlstd{(aggregateData)}
+\end{alltt}
+\begin{verbatim}
+## 'data.frame':	516 obs. of  3 variables:
+##  $ personId: chr  "m20AC1" "m21AC1" "m32AC1" "f35AC1" ...
+##  $ Game    : Factor w/ 12 levels "","AC1","AO",..: 2 2 2 2 2 2 2 2 3 3 ...
+##  $ number  : num  1 1 1 1 2 1 1 1 1 3 ...
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+\emph{Now, use this dataframe to create a bipartite network.}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# create graph from edgelist}
+\hlstd{gameGraph} \hlkwb{=} \hlkwd{graph.edgelist}\hlstd{(}\hlkwd{as.matrix}\hlstd{(aggregateData[,} \hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,} \hlnum{2}\hlstd{)]))}
+\hlcom{# set type attribute on vertex}
+\hlkwd{V}\hlstd{(gameGraph)}\hlopt{$}\hlstd{type} \hlkwb{=} \hlkwd{V}\hlstd{(gameGraph)}\hlopt{$}\hlstd{name} \hlopt{%in%} \hlkwd{get.edgelist}\hlstd{(gameGraph)[,} \hlnum{1}\hlstd{]}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+
+\emph{Additional question: Do you have an idea how to keep the number of gamers in each aggregate in your network model?}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# add number of gamers as edge weight}
+\hlkwd{E}\hlstd{(gameGraph)}\hlopt{$}\hlstd{weight} \hlkwb{=} \hlkwd{as.numeric}\hlstd{(aggregateData[,} \hlnum{3}\hlstd{])}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+
+\emph{Please check the number of vertices and edges in your network.}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# number of vertices}
+\hlkwd{vcount}\hlstd{(gameGraph)}
+\end{alltt}
+\begin{verbatim}
+## [1] 527
+\end{verbatim}
+\begin{alltt}
+\hlcom{# number of edges}
+\hlkwd{ecount}\hlstd{(gameGraph)}
+\end{alltt}
+\begin{verbatim}
+## [1] 516
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+\emph{Now create an unipartite network. Please make your projection weighted, by giving each edge between two vertices in the projected network a weight equal to the number of common games the vertices share. Please reveal again the number of vertices and edges in your network. }
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# create bipartite projection}
+\hlstd{gameGraphProjection} \hlkwb{=} \hlkwd{bipartite.projection} \hlstd{(}
+                      \hlstd{gameGraph,}\hlkwc{multiplicity} \hlstd{=} \hlnum{TRUE}\hlstd{)}\hlopt{$}\hlstd{proj2}
+
+\hlcom{#number of vertices}
+\hlkwd{vcount}\hlstd{(gameGraphProjection)}
+\end{alltt}
+\begin{verbatim}
+## [1] 516
+\end{verbatim}
+\begin{alltt}
+\hlcom{#number of edges}
+\hlkwd{ecount}\hlstd{(gameGraphProjection)}
+\end{alltt}
+\begin{verbatim}
+## [1] 14639
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+
+\end{document}

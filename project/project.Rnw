@@ -1,0 +1,203 @@
+\documentclass{article}
+
+\usepackage[titletoc]{appendix}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage[backend=bibtex, sorting=none]{biblatex}
+
+
+\bibliography{references}
+
+\begin{document}
+
+<<r setup, include=FALSE>>==
+library("igraph", lib.loc="/Library/Frameworks/R.framework/Versions/3.0/Resources/library")
+opts_chunk$set(dev = 'pdf')
+  data <- read.csv("~/Code/computational network analysis/daedalus-data.csv", header=TRUE, sep=";")
+setwd("~/Code/computational network analysis/project/wikispeedia_paths-and-graph")
+Sys.setenv(TEXINPUTS=getwd(), 
+           BIBINPUTS=getwd(), 
+           BSTINPUTS=getwd())
+wikispeedia <- read.graph("network_fixed", format="lgl")
+@
+
+\title{Computational Network Analysis - Class Project \\ Wikipedia Navigation Paths}
+\author{Tobias Kloht, ID: 4596192}
+\maketitle
+\section{Introduction}
+Wikipedia defines itself as "a collaboratively edited, multilingual, free Internet encyclopedia" \cite{wiki:def} covering more than 4.4 million articles in the english language version. It is ranked 6th among the most popular websites worldwide \cite{alexa:wiki} and has developed into the de-facto standard for free user generated encyclopedic content.
+
+This class project aims to analyze the behaviour of users browsing Wikipedia by aggregating internal links used when searching for a specific information into a network. Apart from finding common patterns and analyzing the user behaviour in general, this could potentialy reveal problems with the site's navigation and highlight possible improvements.
+
+\section{Dataset}
+The dataset used in this project contains navigation paths on Wikipedia, collected through the game Wikispeedia \cite{wikispeedia}. The idea of this game is to navigate from one given article to another, using only internal links and as few steps as possible. It was developed as part of a research project to acquire data on commonsense knowledge \cite{wikispeedia:article}. The game operates on a condensed subset of Wikipedia consisting of 4600 articles from 2007.
+
+The resulting dataset consists of 51,318 finished navigation paths and can be accessed at the Stanford Network Analysis Project \cite{snap}. Unfinished navigation paths are also available but have not been used in this project.
+
+\section{Adjusting the Data Format}
+While the dataset described above clearly represents a network with articles as vertices and links as edges, the provided data had to be adjusted for usage with the igraph library \cite{igraph}. To illustrate this, the following listing is an excerpt of the data, provided as a tab-separated list. 
+
+The columns from left to right are:
+\begin{itemize}
+\item Hashed IP Address
+\item Timestamp
+\item Duration in seconds
+\item Path given as list of articles separated by ";"
+\item Rating - optinally provided by users after finishing the game
+\end{itemize}
+
+In addition to that, back clicks are represented as "\textless".
+\lstset{
+  numbers=left,
+  basicstyle=\ttfamily\scriptsize,
+  frame=single,
+  breaklines=true,
+  tabsize=2
+}
+\begin{lstlisting}[title=Excerpt: Wipispeedia Dataset ]
+36dabfa133b20e3c  1249525912	112	14th_century;China;Gunpowder;Fire	2
+20418ff4797f96be	1229188046	139	14th_century;Time;Isaac_Newton;Light;Color;Rainbow	1
+08888b1b428dd90e	1232241510	74	14th_century;Time;Light;Rainbow	3
+\end{lstlisting}
+
+The main problem is that this does not define a network but a list of paths clicked through by users. In order to allow processing of the data with R and igraph I have decided to transform the data into a network as follows:
+\begin{description}
+\item[Vertices:] The articles 
+\item[Edges:] The links used to navigate between two articles
+\item[Edge Weights:] The amount of times a link has been used
+\end{description}
+
+In this format the representation of back clicks is problematic, because it results in a vertex labeled "\textless" with ingoing edges for each back click. For this project it makes more sense to replace each "\textless" with the article that the back click leads to. For example, an entry of the form
+\begin{lstlisting}
+408362e90dc90bce  1249103594	61	Asia;Japan;Cereal;<;<;Japan;Fishing;<;Meat;Mammal	NULL
+\end{lstlisting}
+would be transformed to 
+\begin{lstlisting}
+408362e90dc90bce  1249103594  61	Asia;Japan;Cereal;Japan;Asia;Japan;Fishing;Japan;Meat;Mammal	NULL
+\end{lstlisting}
+
+\subsection{The Large Graph Layout format}
+The resulting network will be stored in the Large Graph Layout (LGL) format \cite{lgl}, which is essentially a modified adjacency list. It lists each vertex preceded by a pound sign, followed by all vertices sharing an edge with it on subsequent lines. Each neighboring vertex can optionally have a weight attached to it.
+
+\begin{lstlisting}[title=LGL format example ]
+# vertex1name
+vertex2name [optionalWeight]
+vertex3name [optionalWeight]
+\end{lstlisting}
+
+
+\subsection{Conversion Steps}
+
+The provided data was transformed to the format described above in the following steps:
+
+\begin{enumerate}
+\item Normalize navigation path by replacing "back clicks" with the actual article
+\item Extract all vertices, i.e. articles
+\item For each vertex, find neighboring vertices and store both in the LGL format 
+\end{enumerate}
+
+In step three the navigation paths are iterated for each article. Whenever an entry matching the current article is found, the next entry of the navigation list is added to a temporary list. After this is done for all navigation paths, the temporary list holds all neighboring articles of the current vertex and it is easy to construct the format discussed above. The other steps are straightforward and will not be discussed further.
+
+Each step has been implemented as a Ruby script. All scripts are available in Appendix A as well as \href{https://github.com/t-obi/computational-network-analysis/tree/master/project/wikispeedia_paths-and-graph}{Github}.
+
+
+\section{Analyzing the Network}
+The resulting network can be imported by igraph directly. A simple plot of the network provides the following:
+<<>>=
+plot.igraph(wikispeedia, vertex.size = 2, vertex.label=NA, edge.arrow.width=0.02, edge.arrow.size=0.2, edge.width = 0.2, layout=layout.kamada.kawai)
+@
+
+
+To get an initial overview the size of the network can be examined:
+<<network size>>=
+# number of vertices
+vcount(wikispeedia)
+#number of edges
+ecount(wikispeedia)
+@
+
+\subsection{Degree Distribution}
+The next step will be a look at the degrees and their distribution:
+
+<<degree overview>>=
+# mean degree of the network
+mean(degree(wikispeedia))
+# median degree of the network
+median(degree(wikispeedia))
+# max degree of the network
+max(degree(wikispeedia))
+@
+
+This shows that the networks degree is right-skewed, i.e. the mean degree is significantly larger than the median. This is a first hint that a small number of vertices has significantly more edges than the rest of the network. To investigate this further we will calculate the degree centralization. 
+<<degree centralization>>=
+centralization.degree(wikispeedia)$centralization
+@
+This result is relatively high and supports our assumption above. The degree centrality is distributed as follows:
+
+<<degree centrality plot>>=
+plot(centralization.degree(wikispeedia)$res, type = "l" )
+
+# mean degree
+mean(centralization.degree(wikispeedia)$res)
+# max degree
+max(centralization.degree(wikispeedia)$res)
+@
+
+This data further exemplifies that the degree is very unevenly distributed among the network, which means that a small number of articles has been \mbox{navigated} frequently in the game. One article in particular has a very high degree even in comparison to all other vertices with high degrees. To find out which article is represented by this vertex the following command can be used:
+<<which article has maximum degree>>=
+which(degree(wikispeedia) == max(degree(wikispeedia)))
+@
+The reason why the article about the United States of America has been used so frequently in this experiment is beyond the scope of this class project. However, given that the initial intention of the Wikispeedia project is to analyze commonsense knowledge, it could be assumed that the users of the game shared a basic understanding of that subject and used it to derive further information.
+
+\subsection{Betweenness Distribution}
+When analyzing the betweenness similar results to the degree section can be expected.
+
+<<betweenness centralization>>=
+centralization.betweenness(wikispeedia)$centralization
+@
+This result is in line with our expectations and shows a relatively centralized distribution of the betweenness over the network.
+
+<<betweenness centrality plot>>=
+plot(centralization.betweenness(wikispeedia)$res, type = "l" )
+
+# mean betweenness
+mean(centralization.betweenness(wikispeedia)$res)
+# max betweenness
+max(centralization.betweenness(wikispeedia)$res)
+@
+
+The Plot above further shows the similarity between degree and betweenness distribution in this graph. In the next step we will test if the same article shares maximum betweenness and degree:
+<<which article has maximum betweenness>>=
+which(betweenness(wikispeedia) == max(betweenness(wikispeedia)))
+@
+
+This expectation is true as well. In this case this just shows that the article which is used the most also interconnects the most articles, which is only natural given the premise of this experiment.
+
+\subsection{Path Length}
+The analysis to this point makes it very likely that the small-world phenomenon applies to this network. To confirm this we can calculate the average path length of the network:
+<<>>=
+average.path.length(wikispeedia)
+@
+This shows that the articles in the network can be reached with very few hops on average.
+
+\section{Conclusion}
+To summarize, we found that the examined network shows typical characteristics of similar networks. The relatively high centralization leads to a short path length because a small set of nodes can interconnect many other vertices.
+
+For further analysis it would be interesting to identify communities within the network, this proved difficult during this class project due to the size of the dataset. 
+
+
+
+
+\newpage 
+\printbibliography
+
+\newpage 
+\begin{appendices}
+  \section{Scripts for Data Transformation}
+  \lstinputlisting[language=Ruby,caption={Node Extraction},label=node_extraction]{wikispeedia_paths-and-graph/read_nodes.rb}
+  \lstinputlisting[language=Ruby,caption={Path normalization},label=path_normalization]{wikispeedia_paths-and-graph/fix_paths.rb}
+  \lstinputlisting[language=Ruby,caption={Building the Network},label=read_edges]{wikispeedia_paths-and-graph/read_edges.rb}
+  
+\end{appendices}
+\end{document}
